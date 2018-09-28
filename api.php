@@ -3,12 +3,25 @@
 
 class Api{
 
-        private $key = 'q7Tc0mB26nDtxxOd@216';
+        private $key = '';
 
-        public function __construct(){
-            if(empty($this->key)){
-                throw new Exception('The "ApiKey" must a needed params');
+        private $appid = '';
+
+        public function __construct($appid){
+
+            if(empty($appid)){
+                throw new Exception("必须提供APPID");
             }
+            //根据appid 查询到 appsecret
+            if($appid == '1ab9mp8920279042'){
+                $key = 'q7Tc0mB26nDtxxOd2161vgd9734u92';
+            }else{
+                $key = '96Tidi29J897Kkdo13982BVH783290';
+            }        
+
+            
+            $this->appid = $appid;
+            $this->key = $key;
         }
 
         /**
@@ -28,10 +41,10 @@ class Api{
         }
 
         /**
-         * 获取key
+         * 获取appid
          */
-        public function getApiKey(){
-            return $this->key;
+        public function getApiAppID(){
+            return $this->appid;
         }
 
         /**
@@ -41,6 +54,9 @@ class Api{
          */
         public function getAuthToken($nonceStr,$timestamp){
             $key = $this->key;
+
+            if(empty($key)) return false;
+
             $data = [];
             $data['nonce_str'] = $nonceStr;
             $data['time_stamp'] = $timestamp;

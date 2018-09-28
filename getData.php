@@ -1,54 +1,12 @@
 <?php 
     require_once "./api.php";
-    $api = new Api();
-    $data = [];
-    if($_POST){
-        
-        $token = $_POST['token'];
-        $nonce_str = $_POST['nonce_str'];
-        $timestamp = $_POST['timestamp'];
-            
-        $rs = httpGet('http://localhost/getUserData.php',[
-            'timestamp' => $timestamp,
-            'noncestr' => $nonce_str,
-            'token' => $token
-        ]);
-
-        $rs_data = json_decode($rs,true);
-        if($rs_data['code'] != 1){
-            echo "请求错误:".$rs_data['msg'];
-        }else{
-            echo "请求成功!";
-            $data = $rs_data['data'];
-        }
-    }else{
+    
+        $appid = '1ab9mp8920279042';
+        $api = new Api($appid);
         $timestamp = time();
         $nonce_str = $api->createNonceStr(); //随机字符串
         $token = $api->getAuthToken($nonce_str,$timestamp); 
-    }
-
-    function httpGet($url,$data = []){
-        $ch = curl_init();//初始化curl函数
-        if(!empty($data)){
-            $query = "?";
-            foreach($data as $key=>$value){
-                $query .= $key."=".$value."&";
-            }
-            $query = trim($query,"&");
-        }
-        $url = $url.$query;
-        echo "url:".$url;
-        curl_setopt($ch,CURLOPT_URL,$url);//GET方式抓取url
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; MSIE 5.01; Windows NT 5.0)');
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_AUTOREFERER, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $res = curl_exec($ch);
-        return $res;
-    }
+    
 ?>
 <!DOCTYPE html>
 <html>
@@ -57,22 +15,66 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>请求用户信息</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script>
+
+        function getUserInfo(){
+
+            var token = '<?php echo $token;?>'
+            var timestamp = '<?php echo $timestamp; ?>';
+            var nonce_str = '<?php echo $nonce_str; ?>';
+            var appid = '<?php echo $appid;?>';
+
+            $.ajax({
+                url:'/getUserData.php',
+                data:{
+                    timestamp:timestamp,
+                    appid:appid,
+                },
+                headers:{
+                    token:token,
+                    noncestr:nonce_str,
+                },
+                method:"get",
+                success:function(res){
+                    var res = $.parseJSON(res);
+                    if(res.code != 1){
+                        alert("API错误:" + res.msg);
+                        return false;
+                    }else{
+                        alert("请求成功!");
+                        setUserInfo({
+                            nickname:res.data.nickname,
+                            age:res.data.age,
+                            regtime:res.data.reg_time,
+                            openid:res.data.openid
+                        });
+                    }
+                }
+            });
+
+            return false;
+        }
+
+        function setUserInfo(data){
+            for(var k in data){
+                $("#" + k).text(data[k]);
+            }
+
+            return true;
+        }
+
+    </script>
 </head>
 <body>
-<form name="form" action="" method="post">
     <div class="get-user">
-        点击此处获取用户信息:
-        <?php if(!empty($data)){ ?>
-            <div class="user-item">昵称: <?php echo $data['nickname'];?></div>
-            <div class="user-item">年龄: <?php echo $data['age'];?></div>
-            <div class="user-item">注册时间: <?php echo $data['reg_time'];?></div>
-            <div class="user-item">openid: <?php echo $data['openid'];?></div>
-        <?php } ?>
-        <input type="submit" name="submit" value="提交" />
-        <input type="hidden" name="token" value="<?php echo $token;?>" />
-        <input type="hidden" name="timestamp" value="<?php echo $timestamp;?>" />
-        <input type="hidden" name="nonce_str" value="<?php echo $nonce_str;?>" />
+        用户信息
+            <div class="user-item">昵称: <span id="nickname"></span></div>
+            <div class="user-item">年龄: <span id="age"></span></div>
+            <div class="user-item">注册时间: <span id="regtime"></span> </div>
+            <div class="user-item">openid: <span id="openid"></span></div>
+            <input type="submit" onclick="return getUserInfo()" name="submit" value="点击获取用户信息" />
     </div>
-</form>
+
 </body>
 </html>
